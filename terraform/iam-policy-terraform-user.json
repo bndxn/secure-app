@@ -1,0 +1,89 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "TerraformState",
+            "Effect": "Allow",
+            "Action": [
+                "s3:*",
+                "dynamodb:*"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "AppRunnerDeploy",
+            "Effect": "Allow",
+            "Action": [
+                "apprunner:*",
+                "ecr:*"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "Logging",
+            "Effect": "Allow",
+            "Action": [
+                "logs:*",
+                "cloudwatch:*"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "IAMRoleManagement",
+            "Effect": "Allow",
+            "Action": [
+                "iam:CreateRole",
+                "iam:DeleteRole",
+                "iam:GetRole",
+                "iam:ListRoles",
+                "iam:UpdateRole",
+                "iam:TagRole",
+                "iam:UntagRole",
+                "iam:ListRoleTags",
+                "iam:AttachRolePolicy",
+                "iam:DetachRolePolicy",
+                "iam:ListAttachedRolePolicies",
+                "iam:PutRolePolicy",
+                "iam:DeleteRolePolicy",
+                "iam:GetRolePolicy",
+                "iam:ListRolePolicies",
+                "iam:CreateServiceLinkedRole"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "IAMPolicyManagement",
+            "Effect": "Allow",
+            "Action": [
+                "iam:CreatePolicy",
+                "iam:DeletePolicy",
+                "iam:GetPolicy",
+                "iam:GetPolicyVersion",
+                "iam:ListPolicyVersions",
+                "iam:ListPolicies",
+                "iam:TagPolicy",
+                "iam:UntagPolicy",
+                "iam:ListPolicyTags"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "PassRoles",
+            "Effect": "Allow",
+            "Action": "iam:PassRole",
+            "Resource": [
+                "arn:aws:iam::462532071155:role/secure-app-*",
+                "arn:aws:iam::462532071155:role/*apprunner*"
+            ]
+        },
+        {
+            "Sid": "STSAssumeRole",
+            "Effect": "Allow",
+            "Action": [
+                "sts:GetCallerIdentity",
+                "sts:AssumeRole"
+            ],
+            "Resource": "*"
+        }
+    ]
+}

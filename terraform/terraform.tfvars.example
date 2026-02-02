@@ -1,0 +1,15 @@
+# Copy this file to terraform.tfvars and customize the values
+
+aws_region = "us-east-1"
+app_name   = "secure-app"
+environment = "dev"
+
+# S3 bucket name (must be globally unique)
+s3_bucket_name = "secure-app-data-bucket-<your-unique-suffix>"
+
+# App Runner instance configuration
+cpu    = "1"    # CPU units: 0.25, 0.5, 1, 2, 4
+memory = "2"    # Memory in GB: 0.5, 1, 2, 3, 4, 6, 8
+
+# Auto-deploy on image push
+auto_deploy_enabled = true
