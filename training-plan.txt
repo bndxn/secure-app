@@ -1,0 +1,110 @@
+# Half Marathon Training Plan - Berlin Half Marathon (29 March 2026)
+
+## Goal
+Half marathon on 29 March 2026, following Hal Higdon's Intermediate 2 plan.
+
+## Key Pace Targets
+- **Race Pace**: 4:30 min/km (target half marathon pace)
+- **Easy/Long Run Pace**: 5:00-6:00 min/km (30-90 seconds slower than race pace)
+- **Tempo Pace**: Near 10K race pace (comfortably hard, ~4:45-5:00 min/km)
+- **Interval Pace (5K pace)**: ~3:45-4:00 min/km (for 400m repeats)
+- **HR Zones**: Zone 2 for easy runs, Zone 3-4 for tempo, Zone 4-5 for intervals
+
+## Workout Types
+- **Long Runs**: Progressive distance, easy pace (5:00-6:00 min/km), key for endurance
+- **Tempo Runs**: 30-45 min continuous with buildup in middle to near 10K pace (~4:45-5:00 min/km)
+- **Intervals**: 400m repeats at 5K pace (~3:45-4:00 min/km) with jog/walk recovery
+- **Pace Runs**: Run at race pace (4:30 min/km) to get used to race pace
+- **Easy Runs**: Recovery runs at easy pace (5:00-6:00 min/km)
+- **Cross-Training**: Aerobic activity (cycling, swimming, etc.) on Mondays
+- **Rest**: Critical for recovery, especially before/after long runs
+
+## Training Schedule (Weeks Starting Monday)
+
+**Week 1: 2-8  Feb 2026 (Starting Monday)**
+2 Feb 2026	M	6.4 km run
+3 Feb 2026	T	7 x 400 5-K pace
+4 Feb 2026	W	40 min cycle
+5 Feb 2026	T	4.8 km run
+6 Feb 2026	F	4.8 km pace
+7 Feb 2026	S	Rest
+8 Feb 2026	S	12.9 km run
+
+**Week 2: 9-15 Feb 2026**
+9 Feb 2026	M	6.4 km run
+10 Feb 2026	T	40 min tempo
+11 Feb 2026	W	50 min cross
+12 Feb 2026	T	4.8 km run
+13 Feb 2026	F	Rest or easy run
+14 Feb 2026	S	Rest
+15 Feb 2026	S	10-K Race
+
+**Week 3: 16-22 Feb 2026**
+16 Feb 2026	M	Rest
+17 Feb 2026	T	7.3 km run
+18 Feb 2026	W	8 x 400 5-K pace
+19 Feb 2026	T	4.8 km run
+20 Feb 2026	F	Rest
+21 Feb 2026	S	6.4 km pace
+22 Feb 2026	S	14.5 km run
+
+**Week 4: 23 Feb - 1 Mar 2026**
+23 Feb 2026	M	7.3 km run
+24 Feb 2026	T	4.8 km run
+25 Feb 2026	W	40 min tempo
+26 Feb 2026	T	8.1 km pace
+27 Feb 2026	F	Rest
+28 Feb 2026	S	50 min cross
+1 Mar 2026	S	16.1 km run
+
+**Week 5: 2-8 Mar 2026**
+2 Mar 2026	M	60 min cross
+3 Mar 2026	T	8.1 km run
+4 Mar 2026	W	9 x 400 5-K pace
+5 Mar 2026	T	4.8 km run
+6 Mar 2026	F	Rest or easy run
+7 Mar 2026	S	Rest
+8 Mar 2026	S	15-K Race
+
+**Week 6: 9-15 Mar 2026**
+9 Mar 2026	M	Rest
+10 Mar 2026	T	8.1 km run
+11 Mar 2026	W	45 min tempo
+12 Mar 2026	T	4.8 km run
+13 Mar 2026	F	Rest
+14 Mar 2026	S	8.1 km pace
+15 Mar 2026	S	17.7 km run
+
+**Week 7: 16-22 Mar 2026**
+16 Mar 2026	M	60 min cross
+17 Mar 2026	T	8.1 km run
+18 Mar 2026	W	10 x 400 5K pace
+19 Mar 2026	T	4.8 km run
+20 Mar 2026	F	Rest
+21 Mar 2026	S	4.8 km pace
+22 Mar 2026	S	19.3 km run
+
+**Week 8: 23-29 Mar 2026 (Race Week)**
+23 Mar 2026	M	Rest
+24 Mar 2026	T	6.4 km run
+25 Mar 2026	W	30 min tempo
+26 Mar 2026	T	3.2 km run
+27 Mar 2026	F	Rest
+28 Mar 2026	S	Rest
+29 Mar 2026	S	Berlin Half Marathon!
+
+**Key Principles:**
+- Long runs should feel like "a stroll in the park" - don't push the pace
+- Tempo runs: 10-15 min easy, 15-20 min at tempo pace, 5-10 min easy
+- Intervals: Walk or jog recovery between 400m repeats
+- Rest is as important as runs - be realistic about fatigue
+- Can juggle workouts day-to-day if needed, but maintain consistency
+
+## Recent Completed Workouts
+- 1 Feb: 16k run (5:23 min/km) - too fast for long run pace
+- 2 Feb: 6.4 km run (5:23 min/km) - too fast for easy pace
+- 3 Feb: 7 x 400m intervals (4:00 min/km) - correct interval pace
+- 4 Feb: 40 min cycle - cross-training
+- 5 Feb: 4.8 km run (5:29 min/km) - too fast for easy pace
+
+**Note**: Recent runs have been consistently faster than prescribed easy pace (5:00-6:00 min/km). Need to slow down for easy runs and long runs to avoid overtraining and injury risk.

@@ -39,3 +39,16 @@ variable "auto_deploy_enabled" {
   type        = bool
   default     = true
 }
+
+# Garmin Lambda Variables
+variable "garmin_secret_name" {
+  description = "Name for the Secrets Manager secret storing Garmin credentials"
+  type        = string
+  default     = "garmin-connect-credentials"
+}
+
+variable "training_plan_s3_key" {
+  description = "S3 key where the training plan is stored"
+  type        = string
+  default     = "training-plan.txt"
+}

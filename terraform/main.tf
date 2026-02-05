@@ -272,3 +272,310 @@ resource "aws_apprunner_service" "app" {
     ManagedBy   = "Terraform"
   }
 }
+
+# =============================================================================
+# GARMIN RUN ANALYZER LAMBDA
+# =============================================================================
+
+# Secrets Manager secret for Garmin credentials
+resource "aws_secretsmanager_secret" "garmin_credentials" {
+  name        = var.garmin_secret_name
+  description = "Garmin Connect credentials for the run analyzer Lambda"
+
+  tags = {
+    Name        = var.garmin_secret_name
+    Environment = var.environment
+    ManagedBy   = "Terraform"
+  }
+}
+
+# IAM role for Lambda function
+resource "aws_iam_role" "lambda_role" {
+  name = "${var.app_name}-garmin-lambda-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "lambda.amazonaws.com"
+        }
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+
+  tags = {
+    Name        = "${var.app_name}-garmin-lambda-role"
+    Environment = var.environment
+    ManagedBy   = "Terraform"
+  }
+}
+
+# IAM policy for Lambda to access Secrets Manager
+resource "aws_iam_policy" "lambda_secrets_policy" {
+  name        = "${var.app_name}-lambda-secrets-policy"
+  description = "Policy for Lambda to access Garmin credentials in Secrets Manager"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue"
+        ]
+        Resource = aws_secretsmanager_secret.garmin_credentials.arn
+      }
+    ]
+  })
+
+  tags = {
+    Name        = "${var.app_name}-lambda-secrets-policy"
+    Environment = var.environment
+    ManagedBy   = "Terraform"
+  }
+}
+
+# IAM policy for Lambda to access S3
+resource "aws_iam_policy" "lambda_s3_policy" {
+  name        = "${var.app_name}-lambda-s3-policy"
+  description = "Policy for Lambda to read/write to S3 bucket"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject"
+        ]
+        Resource = "${aws_s3_bucket.app_data.arn}/*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:ListBucket"
+        ]
+        Resource = aws_s3_bucket.app_data.arn
+      }
+    ]
+  })
+
+  tags = {
+    Name        = "${var.app_name}-lambda-s3-policy"
+    Environment = var.environment
+    ManagedBy   = "Terraform"
+  }
+}
+
+# IAM policy for Lambda to invoke Bedrock
+resource "aws_iam_policy" "lambda_bedrock_policy" {
+  name        = "${var.app_name}-lambda-bedrock-policy"
+  description = "Policy for Lambda to invoke Claude via Bedrock"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "bedrock:InvokeModel",
+          "bedrock:InvokeModelWithResponseStream"
+        ]
+        Resource = [
+          "arn:aws:bedrock:*::foundation-model/*",
+          "arn:aws:bedrock:*:${data.aws_caller_identity.current.account_id}:inference-profile/*",
+          "arn:aws:bedrock:eu-west-1:${data.aws_caller_identity.current.account_id}:inference-profile/eu.anthropic.claude-sonnet-4-5-20250929-v1:0"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "aws-marketplace:ViewSubscriptions",
+          "aws-marketplace:Subscribe",
+          "aws-marketplace:Unsubscribe",
+          "aws-marketplace:GetEntitlements"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect   = "Allow"
+        Action   = "bedrock:*"
+        Resource = "*"
+      }
+    ]
+  })
+
+  tags = {
+    Name        = "${var.app_name}-lambda-bedrock-policy"
+    Environment = var.environment
+    ManagedBy   = "Terraform"
+  }
+}
+
+# IAM policy for Lambda CloudWatch Logs
+resource "aws_iam_policy" "lambda_logs_policy" {
+  name        = "${var.app_name}-lambda-logs-policy"
+  description = "Policy for Lambda to write CloudWatch Logs"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ]
+        Resource = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.app_name}-garmin-analyzer:*"
+      }
+    ]
+  })
+
+  tags = {
+    Name        = "${var.app_name}-lambda-logs-policy"
+    Environment = var.environment
+    ManagedBy   = "Terraform"
+  }
+}
+
+# Attach policies to Lambda role
+resource "aws_iam_role_policy_attachment" "lambda_secrets" {
+  role       = aws_iam_role.lambda_role.name
+  policy_arn = aws_iam_policy.lambda_secrets_policy.arn
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_s3" {
+  role       = aws_iam_role.lambda_role.name
+  policy_arn = aws_iam_policy.lambda_s3_policy.arn
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_bedrock" {
+  role       = aws_iam_role.lambda_role.name
+  policy_arn = aws_iam_policy.lambda_bedrock_policy.arn
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_logs" {
+  role       = aws_iam_role.lambda_role.name
+  policy_arn = aws_iam_policy.lambda_logs_policy.arn
+}
+
+# CloudWatch Log Group for Lambda
+resource "aws_cloudwatch_log_group" "lambda_logs" {
+  name              = "/aws/lambda/${var.app_name}-garmin-analyzer"
+  retention_in_days = 14
+
+  tags = {
+    Name        = "${var.app_name}-garmin-analyzer-logs"
+    Environment = var.environment
+    ManagedBy   = "Terraform"
+  }
+}
+
+# ECR repository for Lambda container image
+resource "aws_ecr_repository" "lambda_repo" {
+  name                 = "${var.app_name}-garmin-analyzer"
+  image_tag_mutability = "MUTABLE"
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+
+  encryption_configuration {
+    encryption_type = "AES256"
+  }
+
+  tags = {
+    Name        = "${var.app_name}-garmin-analyzer-ecr"
+    Environment = var.environment
+    ManagedBy   = "Terraform"
+  }
+}
+
+# ECR lifecycle policy for Lambda repo
+resource "aws_ecr_lifecycle_policy" "lambda_repo" {
+  repository = aws_ecr_repository.lambda_repo.name
+
+  policy = jsonencode({
+    rules = [
+      {
+        rulePriority = 1
+        description  = "Keep last 5 images"
+        selection = {
+          tagStatus     = "any"
+          countType     = "imageCountMoreThan"
+          countNumber   = 5
+        }
+        action = {
+          type = "expire"
+        }
+      }
+    ]
+  })
+}
+
+# Lambda function using container image
+resource "aws_lambda_function" "garmin_analyzer" {
+  function_name = "${var.app_name}-garmin-analyzer"
+  role          = aws_iam_role.lambda_role.arn
+  package_type  = "Image"
+  image_uri     = "${aws_ecr_repository.lambda_repo.repository_url}:latest"
+  timeout       = 60
+  memory_size   = 512
+
+  environment {
+    variables = {
+      GARMIN_SECRET_ARN    = aws_secretsmanager_secret.garmin_credentials.arn
+      S3_BUCKET_NAME       = aws_s3_bucket.app_data.bucket
+      TRAINING_PLAN_S3_KEY = var.training_plan_s3_key
+      AWS_REGION_OVERRIDE  = var.aws_region
+    }
+  }
+
+  depends_on = [
+    aws_iam_role_policy_attachment.lambda_secrets,
+    aws_iam_role_policy_attachment.lambda_s3,
+    aws_iam_role_policy_attachment.lambda_bedrock,
+    aws_iam_role_policy_attachment.lambda_logs,
+    aws_cloudwatch_log_group.lambda_logs
+  ]
+
+  tags = {
+    Name        = "${var.app_name}-garmin-analyzer"
+    Environment = var.environment
+    ManagedBy   = "Terraform"
+  }
+}
+
+# EventBridge rule to trigger Lambda every 12 hours
+resource "aws_cloudwatch_event_rule" "garmin_analyzer_schedule" {
+  name                = "${var.app_name}-garmin-analyzer-schedule"
+  description         = "Trigger Garmin analyzer Lambda every 12 hours"
+  schedule_expression = "rate(12 hours)"
+
+  tags = {
+    Name        = "${var.app_name}-garmin-analyzer-schedule"
+    Environment = var.environment
+    ManagedBy   = "Terraform"
+  }
+}
+
+# EventBridge target for Lambda
+resource "aws_cloudwatch_event_target" "garmin_analyzer_target" {
+  rule      = aws_cloudwatch_event_rule.garmin_analyzer_schedule.name
+  target_id = "GarminAnalyzerLambda"
+  arn       = aws_lambda_function.garmin_analyzer.arn
+}
+
+# Permission for EventBridge to invoke Lambda
+resource "aws_lambda_permission" "eventbridge_invoke" {
+  statement_id  = "AllowEventBridgeInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.garmin_analyzer.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.garmin_analyzer_schedule.arn
+}

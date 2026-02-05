@@ -23,11 +23,12 @@ fi
 
 # Build the Docker image for linux/amd64 (App Runner requirement)
 echo "Building Docker image for linux/amd64..."
-docker buildx build --platform linux/amd64 -t secure-app:latest --load .
+docker buildx build --platform linux/amd64 -f Dockerfile.app -t secure-app:latest --load .
 
-# Login to ECR
+# Login to ECR (need just the registry URL, not the full repo URL)
 echo "Logging in to ECR..."
-aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin $ECR_REPO
+ECR_REGISTRY=$(echo $ECR_REPO | cut -d'/' -f1)
+aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
 
 # Tag the image
 echo "Tagging image..."
@@ -39,7 +40,10 @@ docker push $ECR_REPO:latest
 
 echo ""
 echo "✅ Image pushed successfully!"
-echo "App Runner should automatically deploy the new image (if auto-deploy is enabled)."
+echo ""
+echo "App Runner auto-deploy may take a few minutes to detect the new image."
+echo "To manually trigger deployment, run:"
+echo "  ./scripts/deploy-app.sh"
 echo ""
 echo "To check deployment status, run:"
-echo "  cd terraform && ./run-terraform.sh output app_runner_service_url"
+echo "  cd terraform && terraform output app_runner_service_url"

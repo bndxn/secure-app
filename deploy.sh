@@ -75,7 +75,7 @@ cd ..
 
 # Step 4: Build Docker image
 echo -e "${GREEN}Step 4: Building Docker image...${NC}"
-docker build -t ${APP_NAME}:latest .
+docker build -f Dockerfile.app -t ${APP_NAME}:latest .
 
 # Step 5: Login to ECR
 echo -e "${GREEN}Step 5: Logging in to ECR...${NC}"

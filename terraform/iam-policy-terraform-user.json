@@ -29,6 +29,30 @@
             "Resource": "*"
         },
         {
+            "Sid": "SecretsManager",
+            "Effect": "Allow",
+            "Action": [
+                "secretsmanager:*"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "EventBridge",
+            "Effect": "Allow",
+            "Action": [
+                "events:*"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "Lambda",
+            "Effect": "Allow",
+            "Action": [
+                "lambda:*"
+            ],
+            "Resource": "*"
+        },
+        {
             "Sid": "IAMRoleManagement",
             "Effect": "Allow",
             "Action": [
@@ -56,14 +80,17 @@
             "Effect": "Allow",
             "Action": [
                 "iam:CreatePolicy",
+                "iam:CreatePolicyVersion",
                 "iam:DeletePolicy",
+                "iam:DeletePolicyVersion",
                 "iam:GetPolicy",
                 "iam:GetPolicyVersion",
                 "iam:ListPolicyVersions",
                 "iam:ListPolicies",
                 "iam:TagPolicy",
                 "iam:UntagPolicy",
-                "iam:ListPolicyTags"
+                "iam:ListPolicyTags",
+                "iam:SetDefaultPolicyVersion"
             ],
             "Resource": "*"
         },

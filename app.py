@@ -1,5 +1,7 @@
+import html
+import json
 import os
-
+import re
 import sys
 from flask import Flask, jsonify, render_template_string, Response
 
@@ -7,6 +9,7 @@ app = Flask(__name__)
 
 # Get S3 bucket name from environment variable
 S3_BUCKET_NAME = os.environ.get('S3_BUCKET_NAME', 'secure-app-data')
+ANALYSIS_PREFIX = 'run-analysis/'
 
 # Initialize S3 client lazily to avoid startup issues
 def get_s3_client():
@@ -20,6 +23,152 @@ def get_s3_client():
         # Log error but don't crash
         print(f"Warning: Could not initialize S3 client: {e}", file=sys.stderr)
         raise
+
+
+def get_latest_analysis():
+    """Get the most recent run analysis from S3."""
+    try:
+        from botocore.exceptions import ClientError
+        s3_client = get_s3_client()
+        
+        # List all analysis files
+        response = s3_client.list_objects_v2(
+            Bucket=S3_BUCKET_NAME,
+            Prefix=ANALYSIS_PREFIX
+        )
+        
+        if 'Contents' not in response or not response['Contents']:
+            print(f"No analysis files found with prefix '{ANALYSIS_PREFIX}'", file=sys.stderr)
+            return None
+        
+        print(f"Found {len(response['Contents'])} analysis files", file=sys.stderr)
+        
+        # Sort by LastModified (most recent first)
+        files = sorted(
+            response['Contents'],
+            key=lambda x: x['LastModified'],
+            reverse=True
+        )
+        
+        # Get the most recent file
+        latest_file = files[0]
+        file_key = latest_file['Key']
+        print(f"Loading latest analysis from: {file_key}", file=sys.stderr)
+        
+        # Download and parse the file
+        file_response = s3_client.get_object(Bucket=S3_BUCKET_NAME, Key=file_key)
+        content = file_response['Body'].read().decode('utf-8')
+        analysis_data = json.loads(content)
+        
+        print(f"Successfully loaded analysis with keys: {list(analysis_data.keys())}", file=sys.stderr)
+        return analysis_data
+    except (ClientError, json.JSONDecodeError, KeyError, Exception) as e:
+        print(f"Error fetching latest analysis: {type(e).__name__}: {e}", file=sys.stderr)
+        import traceback
+        traceback.print_exc(file=sys.stderr)
+        return None
+
+
+def format_recent_runs_html(analysis_data):
+    """Format the 3 most recent runs from analysis data as a simple bullet list."""
+    if not analysis_data:
+        return None
+    
+    recent_runs = analysis_data.get('recent_runs', [])
+    if not recent_runs:
+        return '<p><em>No recent runs found.</em></p>'
+    
+    html_parts: list[str] = []
+    html_parts.append('<ul>')
+
+    for run in recent_runs[:3]:  # Ensure max 3
+        name = run.get("name", "Untitled Run") or "Untitled Run"
+        distance = run.get("distanceKm", "N/A")
+        duration = run.get("durationMin", "N/A")
+        start_time = run.get("startTimeLocal", "Unknown")
+
+        # Format date nicely (just the date part if it includes time)
+        date_display = start_time.split()[0] if isinstance(start_time, str) and " " in start_time else start_time
+
+        # Calculate pace and get HR if available
+        pace = "?"
+        avg_hr = run.get("averageHR") or "?"
+        
+        # Calculate pace from distance and duration if possible
+        try:
+            if isinstance(distance, (int, float)) and isinstance(duration, (int, float)) and distance > 0 and duration > 0:
+                pace_min_per_km = duration / distance
+                pace_min = int(pace_min_per_km)
+                pace_sec = int((pace_min_per_km - pace_min) * 60)
+                pace = f"{pace_min}:{pace_sec:02d}/km"
+        except (ValueError, TypeError):
+            pass
+
+        # Top-level bullet for the run
+        summary = f"{date_display} - {name}, {distance} km, {duration} min, {pace}, avg HR {avg_hr}"
+        html_parts.append(f'<li>{html.escape(summary)}')
+
+        # Nested bullets for intervals, if available
+        intervals = run.get("intervals")
+        if intervals:
+            html_parts.append('<ul>')
+            for interval in intervals[:6]:  # Limit to 6 intervals for readability
+                # Interval text is already human-readable from the Lambda
+                interval_text = str(interval)
+                html_parts.append(f'<li>{html.escape(interval_text)}</li>')
+            html_parts.append("</ul>")
+        
+        html_parts.append("</li>")
+
+    html_parts.append("</ul>")
+
+    return "".join(html_parts) if html_parts else "<p><em>No recent runs found.</em></p>"
+
+
+def truncate_to_words(text, max_words=250):
+    """Truncate text to a maximum number of words."""
+    words = text.split()
+    if len(words) <= max_words:
+        return text
+    return ' '.join(words[:max_words]) + '...'
+
+
+def format_analysis_html(analysis_data):
+    """Format the Claude analysis as HTML - simple plain text formatting."""
+    if not analysis_data:
+        return None
+    
+    analysis_text = analysis_data.get('analysis', '')
+    if not analysis_text:
+        return None
+    
+    # Truncate to 100 words
+    analysis_text = truncate_to_words(analysis_text, max_words=100)
+    
+    # Escape HTML
+    analysis_text = html.escape(analysis_text)
+    
+    # Simple formatting: split by line breaks and format as paragraphs
+    lines = analysis_text.split('\n')
+    formatted_lines = []
+    prev_was_blank = False
+    
+    for line in lines:
+        line = line.strip()
+        
+        # Skip multiple consecutive blank lines
+        if not line:
+            if not prev_was_blank:
+                formatted_lines.append('<br>')
+                prev_was_blank = True
+            continue
+        
+        prev_was_blank = False
+        
+        # Format as paragraph
+        formatted_lines.append(f'<p>{line}</p>')
+    
+    return '\n'.join(formatted_lines)
 
 # HTML template for the homepage
 HOME_TEMPLATE = """
@@ -62,21 +211,6 @@ HOME_TEMPLATE = """
             margin-bottom: 30px;
             font-size: 1.1em;
         }
-        .status {
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-        }
-        .status.success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        .status.error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
         .bucket-info {
             background: #f8f9fa;
             padding: 20px;
@@ -98,6 +232,56 @@ HOME_TEMPLATE = """
             border-radius: 5px;
             border-left: 4px solid #667eea;
         }
+        .block {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .block h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .runs-list {
+            margin-top: 10px;
+            padding-left: 0;
+        }
+        .runs-list ul {
+            list-style-type: disc;
+            padding-left: 20px;
+            margin: 8px 0;
+        }
+        .runs-list ul ul {
+            list-style-type: circle;
+            padding-left: 30px;
+            margin-top: 4px;
+        }
+        .runs-list li {
+            margin: 4px 0;
+            list-style-position: outside;
+        }
+        .analysis-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 10px;
+            line-height: 1.5;
+        }
+        .analysis-content h4 {
+            color: #333;
+            margin-top: 12px;
+            margin-bottom: 6px;
+            font-size: 1.1em;
+        }
+        .analysis-content p {
+            margin: 6px 0;
+        }
+        .analysis-content br {
+            line-height: 0.5;
+        }
         code {
             background: #f1f1f1;
             padding: 2px 6px;
@@ -111,36 +295,32 @@ HOME_TEMPLATE = """
         <h1>🚀 Secure App</h1>
         <p class="subtitle">Flask Application on AWS App Runner</p>
         
-        {% if status == 'success' %}
-        <div class="status success">
-            ✅ Successfully connected to S3 bucket: <code>{{ bucket_name }}</code>
+        <div class="block">
+            <h3>Recent runs</h3>
+            <div class="runs-list">
+                {% if recent_runs %}
+                    {{ recent_runs | safe }}
+                {% else %}
+                    <p><em>No recent runs available.</em></p>
+                {% endif %}
+            </div>
         </div>
-        {% else %}
-        <div class="status error">
-            ❌ Error: {{ error_message }}
-        </div>
-        {% endif %}
         
-        {% if files %}
-        <div class="bucket-info">
-            <h2>Files in S3 Bucket</h2>
-            <ul class="file-list">
-                {% for file in files %}
-                <li>{{ file }}</li>
-                {% endfor %}
-            </ul>
+        <div class="block">
+            <h3>Analysis and suggested next run</h3>
+            <div class="analysis-content">
+                {% if suggested_next_run %}
+                    {{ suggested_next_run | safe }}
+                {% elif analysis_error %}
+                    <div class="status error">
+                        Unable to load analysis: {{ analysis_error }}
+                    </div>
+                {% else %}
+                    <p><em>No analysis available yet. The Lambda will analyze your next run.</em></p>
+                {% endif %}
+            </div>
         </div>
-        {% endif %}
         
-        <div class="bucket-info" style="margin-top: 20px;">
-            <h2>API Endpoints</h2>
-            <ul class="file-list">
-                <li><code>GET /</code> - This homepage</li>
-                <li><code>GET /health</code> - Health check endpoint</li>
-                <li><code>GET /api/files</code> - List files in S3 bucket</li>
-                <li><code>GET /api/files/&lt;filename&gt;</code> - Get file content from S3</li>
-            </ul>
-        </div>
     </div>
 </body>
 </html>
@@ -149,19 +329,43 @@ HOME_TEMPLATE = """
 
 @app.route('/')
 def index():
-    """Homepage with S3 bucket information"""
+    """Homepage with S3 bucket information and latest run analysis"""
     try:
         from botocore.exceptions import ClientError
-        # List objects in the bucket (limit to 10 for display)
-        s3_client = get_s3_client()
-        response = s3_client.list_objects_v2(Bucket=S3_BUCKET_NAME, MaxKeys=10)
-        files = [obj['Key'] for obj in response.get('Contents', [])]
+        # Get latest analysis
+        latest_analysis = None
+        analysis_error = None
+        try:
+            latest_analysis = get_latest_analysis()
+            print(f"Latest analysis result: {latest_analysis is not None}", file=sys.stderr)
+            if latest_analysis:
+                print(f"Analysis keys: {list(latest_analysis.keys())}", file=sys.stderr)
+        except Exception as e:
+            analysis_error = str(e)
+            print(f"Exception getting analysis: {e}", file=sys.stderr)
+            import traceback
+            traceback.print_exc(file=sys.stderr)
+        
+        recent_runs_html = None
+        analysis_html = None
+        if latest_analysis:
+            try:
+                recent_runs_html = format_recent_runs_html(latest_analysis)
+                analysis_html = format_analysis_html(latest_analysis)
+                print(f"Recent runs HTML: {recent_runs_html is not None}", file=sys.stderr)
+                print(f"Analysis HTML: {analysis_html is not None}", file=sys.stderr)
+            except Exception as e:
+                analysis_error = f"Error formatting analysis: {str(e)}"
+                print(f"Exception formatting: {e}", file=sys.stderr)
+                import traceback
+                traceback.print_exc(file=sys.stderr)
         
         return render_template_string(
             HOME_TEMPLATE,
-            status='success',
             bucket_name=S3_BUCKET_NAME,
-            files=files if files else None
+            recent_runs=recent_runs_html,
+            suggested_next_run=analysis_html,
+            analysis_error=analysis_error
         )
     except ClientError as e:
         error_code = e.response['Error']['Code']
@@ -174,16 +378,14 @@ def index():
         
         return render_template_string(
             HOME_TEMPLATE,
-            status='error',
-            error_message=error_message,
-            bucket_name=S3_BUCKET_NAME
+            bucket_name=S3_BUCKET_NAME,
+            analysis_error=error_message
         ), 500
     except Exception as e:
         return render_template_string(
             HOME_TEMPLATE,
-            status='error',
-            error_message=f"Unexpected error: {str(e)}",
-            bucket_name=S3_BUCKET_NAME
+            bucket_name=S3_BUCKET_NAME,
+            analysis_error=f"Unexpected error: {str(e)}"
         ), 500
 
 
