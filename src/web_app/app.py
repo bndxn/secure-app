@@ -47,7 +47,8 @@ def get_latest_analysis_from_s3():
 
     return {
         "recent_runs": data.get("recent_runs", []),
-        "suggestion": data.get("suggestion") or data.get("analysis", "No suggestion yet."),
+        "suggestion": data.get("suggestion")
+        or data.get("analysis", "No suggestion yet."),
         "recent_runs_html": data.get("recent_runs_html"),
     }
 
@@ -62,7 +63,11 @@ def format_runs_fallback(recent_runs):
         name = html.escape(r.get("name") or "Run")
         dist = r.get("distanceKm", "?")
         dur_min = r.get("durationMin")
-        dur = f"{int(dur_min)}:{int((dur_min or 0) % 1 * 60):02d}" if isinstance(dur_min, (int, float)) else "?"
+        dur = (
+            f"{int(dur_min)}:{int((dur_min or 0) % 1 * 60):02d}"
+            if isinstance(dur_min, (int, float))
+            else "?"
+        )
         parts.append(f"<li>{date} - {name}, {dist} km, {dur}, avg HR N/A</li>")
     parts.append("</ul>")
     return "".join(parts)

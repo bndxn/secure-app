@@ -36,8 +36,7 @@ BEDROCK_MODEL_ID = "eu.anthropic.claude-sonnet-4-5-20250929-v1:0"
 
 # Time windows
 TRIGGER_HOURS = 12  # Only analyze if run in last 12 hours
-CONTEXT_DAYS = 7    # Include all runs from last 7 days for review and display
-
+CONTEXT_DAYS = 7  # Include all runs from last 7 days for review and display
 
 
 def get_garmin_credentials():
@@ -112,7 +111,6 @@ def get_training_plan(s3_client):
         raise
 
 
-
 def format_runs_as_html_bedrock(bedrock_client, running_activities):
     """Format recent runs as HTML ul/li using Bedrock."""
     if not running_activities:
@@ -143,11 +141,13 @@ Activities JSON:
             modelId=BEDROCK_MODEL_ID,
             contentType="application/json",
             accept="application/json",
-            body=json.dumps({
-                "anthropic_version": "bedrock-2023-05-31",
-                "max_tokens": 2048,
-                "messages": [{"role": "user", "content": prompt}],
-            }),
+            body=json.dumps(
+                {
+                    "anthropic_version": "bedrock-2023-05-31",
+                    "max_tokens": 2048,
+                    "messages": [{"role": "user", "content": prompt}],
+                }
+            ),
         )
         body = json.loads(response["body"].read())
         html = (body.get("content") or [{}])[0].get("text", "").strip()
@@ -203,36 +203,35 @@ Maximum 250 words total."""
             modelId=BEDROCK_MODEL_ID,
             contentType="application/json",
             accept="application/json",
-            body=json.dumps({
-                "anthropic_version": "bedrock-2023-05-31",
-                "max_tokens": 512,  # ~180 words; prompt asks for concise output
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
-                ]
-            })
+            body=json.dumps(
+                {
+                    "anthropic_version": "bedrock-2023-05-31",
+                    "max_tokens": 512,  # ~180 words; prompt asks for concise output
+                    "messages": [{"role": "user", "content": prompt}],
+                }
+            ),
         )
-        
+
         response_body = json.loads(response["body"].read())
         analysis = response_body["content"][0]["text"]
         logger.info("Successfully received analysis from Claude")
         return analysis
-        
+
     except ClientError as e:
         logger.error(f"Failed to invoke Bedrock: {e}")
         raise
 
 
-
-
-def save_analysis_to_s3(s3_client, trigger_run, analysis, all_activities, recent_runs_html=None):
+def save_analysis_to_s3(
+    s3_client, trigger_run, analysis, all_activities, recent_runs_html=None
+):
     """Save the analysis output to S3. Stores all runs from last 7 days for display."""
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     key = f"{OUTPUT_PREFIX}{timestamp}_analysis.json"
 
-    running_activities = [a for a in all_activities if a.get("activityType") == "running"]
+    running_activities = [
+        a for a in all_activities if a.get("activityType") == "running"
+    ]
     running_activities.sort(
         key=lambda x: x.get("startTimeLocal", ""),
         reverse=True,
@@ -248,13 +247,13 @@ def save_analysis_to_s3(s3_client, trigger_run, analysis, all_activities, recent
     }
     if recent_runs_html:
         output["recent_runs_html"] = recent_runs_html
-    
+
     try:
         s3_client.put_object(
             Bucket=S3_BUCKET,
             Key=key,
             Body=json.dumps(output, indent=2),
-            ContentType="application/json"
+            ContentType="application/json",
         )
         logger.info(f"Successfully saved analysis to s3://{S3_BUCKET}/{key}")
         return key
@@ -291,25 +290,35 @@ def lambda_handler(event, context):
         }
 
     all_activities = filter_activities_by_date(all_activities_raw, days=CONTEXT_DAYS)
-    logger.info(f"Fetched {len(all_activities_raw)} total activities, {len(all_activities)} from last {CONTEXT_DAYS} days")
+    logger.info(
+        f"Fetched {len(all_activities_raw)} total activities, {len(all_activities)} from last {CONTEXT_DAYS} days"
+    )
 
     recent_runs = filter_recent_runs(all_activities, hours=TRIGGER_HOURS)
     if not recent_runs:
         logger.info(f"No runs found in the last {TRIGGER_HOURS} hours. Exiting.")
         return {
             "statusCode": 200,
-            "body": json.dumps({
-                "message": f"No runs in the last {TRIGGER_HOURS} hours",
-                "runs_analyzed": 0,
-                "total_activities_fetched": len(all_activities_raw),
-            }),
+            "body": json.dumps(
+                {
+                    "message": f"No runs in the last {TRIGGER_HOURS} hours",
+                    "runs_analyzed": 0,
+                    "total_activities_fetched": len(all_activities_raw),
+                }
+            ),
         }
 
     training_plan = get_training_plan(s3_client)
-    running_activities_7d = [a for a in all_activities if a.get("activityType") == "running"]
-    recent_runs_html = format_runs_as_html_bedrock(bedrock_client, running_activities_7d)
+    running_activities_7d = [
+        a for a in all_activities if a.get("activityType") == "running"
+    ]
+    recent_runs_html = format_runs_as_html_bedrock(
+        bedrock_client, running_activities_7d
+    )
 
-    logger.info("Requesting coach analysis (review last 7 days + look-ahead next 3 days)")
+    logger.info(
+        "Requesting coach analysis (review last 7 days + look-ahead next 3 days)"
+    )
     analysis = analyze_runs_with_claude(
         bedrock_client,
         recent_runs_html,
@@ -318,16 +327,22 @@ def lambda_handler(event, context):
 
     trigger_run = recent_runs[0]
     output_key = save_analysis_to_s3(
-        s3_client, trigger_run, analysis, all_activities, recent_runs_html=recent_runs_html
+        s3_client,
+        trigger_run,
+        analysis,
+        all_activities,
+        recent_runs_html=recent_runs_html,
     )
 
     return {
         "statusCode": 200,
-        "body": json.dumps({
-            "message": "Coach analysis complete (last 7 days review + next 3 days look-ahead)",
-            "runs_analyzed": len(recent_runs),
-            "runs_in_context": len(running_activities_7d),
-            "total_activities_fetched": len(all_activities_raw),
-            "output_key": output_key,
-        }),
+        "body": json.dumps(
+            {
+                "message": "Coach analysis complete (last 7 days review + next 3 days look-ahead)",
+                "runs_analyzed": len(recent_runs),
+                "runs_in_context": len(running_activities_7d),
+                "total_activities_fetched": len(all_activities_raw),
+                "output_key": output_key,
+            }
+        ),
     }

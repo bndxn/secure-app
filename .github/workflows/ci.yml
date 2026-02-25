@@ -43,6 +43,4 @@ jobs:
           pip install -r requirements.txt
 
       - name: Pytest
-        run: pytest tests
-        env:
-          PYTHONPATH: src
+        run: pytest

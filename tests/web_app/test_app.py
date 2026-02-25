@@ -19,7 +19,7 @@ def test_format_runs_single_run():
             }
         ]
     )
-    assert result == "<ul><li>2026-02-24 - Run 1, 10 km, 1:00, avg HR N/A</li></ul>"
+    assert result == "<ul><li>2026-02-24 - Run 1, 10 km, 60:00, avg HR N/A</li></ul>"
 
 
 def test_format_runs_multiple_runs():
@@ -41,7 +41,7 @@ def test_format_runs_multiple_runs():
         ]
     )
     expected = (
-        "<ul><li>2026-02-24 - Run 1, 10 km, 1:00, avg HR N/A</li>"
-        "<li>2026-02-25 - Run 2, 15 km, 1:30, avg HR N/A</li></ul>"
+        "<ul><li>2026-02-24 - Run 1, 10 km, 60:00, avg HR N/A</li>"
+        "<li>2026-02-25 - Run 2, 15 km, 90:00, avg HR N/A</li></ul>"
     )
     assert result == expected

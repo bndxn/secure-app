@@ -1,0 +1,14 @@
+[project]
+name = "secure-app"
+version = "0.1.0"
+description = "Flask run tracker with Garmin and Claude analysis"
+readme = "README.md"
+requires-python = ">=3.11"
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

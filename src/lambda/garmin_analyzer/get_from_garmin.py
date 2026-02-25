@@ -8,6 +8,7 @@ from xml.etree import ElementTree as ET
 
 try:
     from dotenv import load_dotenv
+
     load_dotenv()
 except ImportError:
     pass  # Lambda: credentials set via env by handler; no .env file
@@ -243,4 +244,3 @@ def get_recent_garmin_activities(n_recent: int = 10) -> str:
             api.logout()
         except Exception:
             pass
-
