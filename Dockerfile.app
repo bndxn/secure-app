@@ -13,8 +13,9 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
-COPY app.py .
+# Copy web app (S3-only; no LLM)
+COPY src/web_app/app.py .
+COPY src/web_app/templates ./templates/
 
 # Expose port (App Runner default is 8000)
 EXPOSE 8000

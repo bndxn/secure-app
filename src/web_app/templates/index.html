@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Run tracker</title>
+    <style>
+        body { font-family: Arial, Helvetica, sans-serif; font-size: 14px; background: #f8f9fa; padding: 20px; }
+        .container { max-width: 700px; margin: 0 auto; background: white; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        h1 { color: #333; margin-bottom: 8px; }
+        h3 { color: #333; border-bottom: 2px solid #667eea; padding-bottom: 8px; margin-top: 24px; }
+        .runs-list { margin: 12px 0; }
+        .runs-list ul { list-style: none; padding-left: 0; }
+        .runs-list > ul > li { margin-bottom: 0.65em; line-height: 1.5; padding-left: 1.6em; position: relative; }
+        .runs-list > ul > li::before { content: "🏃"; position: absolute; left: 0; }
+        .runs-list ul ul { padding-left: 1.2em; margin-top: 0.25em; }
+        .runs-list ul ul li { margin-bottom: 0.4em; list-style: disc; padding-left: 0.5em; }
+        .runs-list ul ul li::before { content: none; }
+        .suggestion { margin: 12px 0; line-height: 1.55; }
+        .suggestion ul { list-style: none; padding-left: 0; }
+        .suggestion ul li { margin-bottom: 0.65em; line-height: 1.5; padding-left: 1.6em; position: relative; }
+        .suggestion ul li::before { content: "👟"; position: absolute; left: 0; }
+        .suggestion p { margin-bottom: 0.75em; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Run tracker</h1>
+        <p>Latest runs and coach suggestion (from S3).</p>
+
+        <h3>Recent runs</h3>
+        <div class="runs-list">
+            {{ recent_runs | safe }}
+        </div>
+
+        <h3>Coach suggestion</h3>
+        <div class="suggestion">
+            {{ suggested_next_run | safe }}
+        </div>
+    </div>
+</body>
+</html>

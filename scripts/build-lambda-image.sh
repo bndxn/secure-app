@@ -5,7 +5,7 @@
 # This script builds the Garmin analyzer Lambda container image
 # and pushes it to ECR.
 #
-# Usage: ./scripts/build-lambda-layer.sh
+# Usage: ./scripts/build-lambda-image.sh
 #
 # Prerequisites:
 #   - AWS CLI configured with appropriate credentials
@@ -16,7 +16,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-LAMBDA_DIR="$PROJECT_ROOT/lambda/garmin_analyzer"
+LAMBDA_DIR="$PROJECT_ROOT/src/lambda/garmin_analyzer"
 
 # Configuration
 AWS_PROFILE="${AWS_PROFILE:-prod}"

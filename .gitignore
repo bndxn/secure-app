@@ -29,4 +29,6 @@ ENV/
 .terraform.lock.hcl
 *.tfvars
 .terraform.tfstate.lock.info
+tfplan
+*.tfplan
 .mypy_cache/

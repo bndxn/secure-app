@@ -40,6 +40,12 @@ variable "auto_deploy_enabled" {
   default     = true
 }
 
+variable "custom_domain_run" {
+  description = "Custom domain for run subdomain (e.g. run.bendixon.net)"
+  type        = string
+  default     = "run.bendixon.net"
+}
+
 # Garmin Lambda Variables
 variable "garmin_secret_name" {
   description = "Name for the Secrets Manager secret storing Garmin credentials"

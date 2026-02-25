@@ -126,6 +126,39 @@ resource "aws_iam_role_policy_attachment" "apprunner_s3" {
   policy_arn = aws_iam_policy.apprunner_s3_policy.arn
 }
 
+# IAM policy for App Runner to invoke Bedrock (format recent runs with LLM)
+resource "aws_iam_policy" "apprunner_bedrock_policy" {
+  name        = "${var.app_name}-apprunner-bedrock-policy"
+  description = "Policy for App Runner to invoke Bedrock for formatting"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "bedrock:InvokeModel"
+        ]
+        Resource = [
+          "arn:aws:bedrock:*::foundation-model/*",
+          "arn:aws:bedrock:*:${data.aws_caller_identity.current.account_id}:inference-profile/*"
+        ]
+      }
+    ]
+  })
+
+  tags = {
+    Name        = "${var.app_name}-apprunner-bedrock-policy"
+    Environment = var.environment
+    ManagedBy   = "Terraform"
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "apprunner_bedrock" {
+  role       = aws_iam_role.apprunner_role.name
+  policy_arn = aws_iam_policy.apprunner_bedrock_policy.arn
+}
+
 # IAM role for App Runner access role (for ECR if using container registry)
 resource "aws_iam_role" "apprunner_access_role" {
   name = "${var.app_name}-apprunner-access-role"
@@ -271,6 +304,13 @@ resource "aws_apprunner_service" "app" {
     Environment = var.environment
     ManagedBy   = "Terraform"
   }
+}
+
+# Custom domain for run.bendixon.net (alongside running.bendixon.net)
+resource "aws_apprunner_custom_domain_association" "run_domain" {
+  service_arn = aws_apprunner_service.app.arn
+  domain_name = var.custom_domain_run
+  # enable_www_subdomain = false  # set to true if you also want www.run.bendixon.net
 }
 
 # =============================================================================
