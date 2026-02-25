@@ -186,9 +186,9 @@ All Runs (Last 7 Days):
 
 Write exactly two parts. Use plain text only (no markdown, no **).
 
-1) REVIEW OF LAST SEVEN DAYS: One short paragraph only. Be encouraging. Say how many runs they completed vs how many were planned (e.g. "Good job on completing 5/6 of your runs"). Say if overall paces are in line with the plan. Mention only 1–2 specific concerns if relevant (e.g. "on your 10K your HR was higher than it should be"). Keep it to 2–3 sentences.
+1) The last week: One short paragraph only. Be encouraging. Say how many runs they completed vs how many were planned (e.g. "Good job on completing 5/6 of your runs"). Say if overall paces are in line with the plan. Sometimes the runner might move workouts around or skip a workout. Report on the total distance run and the total distance planned. Mention only 1–2 specific concerns if relevant (e.g. "on your 10K your HR was higher than it should be"). Keep it to 2–3 sentences.
 
-2) NEXT THREE DAYS: Start with the line "Next three days:" then list the next 3 calendar days, each on its own line with a dash. Use "today (date)", "tomorrow (date)", and the day name for the third (e.g. "Thursday 26th"). For each day give only: the workout type and a brief pace or effort hint (e.g. "16.1km slow pace, e.g. 5-6:00" or "cross-training, relaxed" or "rest: no running"). Do not include warm-up/cool-down instructions or long explanations. One short line per day.
+2) The next three days: Start with the line "Next three days:" then list the next 3 calendar days, each on its own line with a dash. Use "today (date)", "tomorrow (date)", and the day name for the third (e.g. "Thursday 26th"). Sometimes the runner might move workouts around or skip a workout. Consider what workouts are scheduled and whether they need to be moved around slightly. For each day give only: the workout type and a brief pace or effort hint (e.g. "16.1km slow pace, e.g. 5-6:00" or "cross-training, relaxed" or "rest: no running"). Do not include warm-up/cool-down instructions or long explanations. One short line per day.
 
 Example style for part 2:
 Next three days:
@@ -196,7 +196,7 @@ Next three days:
 - tomorrow (25th): 16.1km slow pace, e.g. 5-6:00
 - Thursday (26th): easy / recovery
 
-Maximum 200 words total."""
+Maximum 250 words total."""
 
     try:
         response = bedrock_client.invoke_model(
