@@ -8,9 +8,9 @@ output "app_runner_service_arn" {
   value       = aws_apprunner_service.app.arn
 }
 
-# run.bendixon.net custom domain: add each of these CNAME records to DNS for certificate validation
+# running.bendixon.net custom domain: add each of these CNAME records to DNS for certificate validation
 output "run_domain_cert_validation_records" {
-  description = "All CNAME records for run.bendixon.net certificate validation (add each to DNS)"
+  description = "All CNAME records for running.bendixon.net certificate validation (add each to DNS)"
   value = [
     for r in aws_apprunner_custom_domain_association.run_domain.certificate_validation_records :
     { name = r.name, value = r.value }

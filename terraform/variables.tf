@@ -41,9 +41,9 @@ variable "auto_deploy_enabled" {
 }
 
 variable "custom_domain_run" {
-  description = "Custom domain for run subdomain (e.g. run.bendixon.net)"
+  description = "Custom domain for the run tracker app (e.g. running.bendixon.net)"
   type        = string
-  default     = "run.bendixon.net"
+  default     = "running.bendixon.net"
 }
 
 # Garmin Lambda Variables

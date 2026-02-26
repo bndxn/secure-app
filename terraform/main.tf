@@ -306,11 +306,11 @@ resource "aws_apprunner_service" "app" {
   }
 }
 
-# Custom domain for run.bendixon.net (alongside running.bendixon.net)
+# Custom domain for running.bendixon.net
 resource "aws_apprunner_custom_domain_association" "run_domain" {
   service_arn = aws_apprunner_service.app.arn
   domain_name = var.custom_domain_run
-  # enable_www_subdomain = false  # set to true if you also want www.run.bendixon.net
+  # enable_www_subdomain = false  # set to true if you also want www.running.bendixon.net
 }
 
 # =============================================================================
