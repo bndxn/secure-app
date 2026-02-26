@@ -6,6 +6,10 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+    archive = {
+      source  = "hashicorp/archive"
+      version = "~> 2.0"
+    }
   }
 }
 
@@ -618,4 +622,85 @@ resource "aws_lambda_permission" "eventbridge_invoke" {
   function_name = aws_lambda_function.garmin_analyzer.function_name
   principal     = "events.amazonaws.com"
   source_arn    = aws_cloudwatch_event_rule.garmin_analyzer_schedule.arn
+}
+
+# =============================================================================
+# APP RUNNER SCHEDULER (8am–6pm UK only, to reduce cost)
+# =============================================================================
+
+data "archive_file" "apprunner_scheduler" {
+  type        = "zip"
+  source_file = "${path.module}/../src/lambda/apprunner_scheduler/main.py"
+  output_path = "${path.module}/apprunner_scheduler.zip"
+}
+
+resource "aws_iam_role" "apprunner_scheduler_role" {
+  name = "${var.app_name}-apprunner-scheduler-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = { Service = "lambda.amazonaws.com" }
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "apprunner_scheduler_policy" {
+  name   = "apprunner-pause-resume"
+  role   = aws_iam_role.apprunner_scheduler_role.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["apprunner:PauseService", "apprunner:ResumeService"]
+        Resource = aws_apprunner_service.app.arn
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
+        Resource = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.app_name}-apprunner-scheduler:*"
+      }
+    ]
+  })
+}
+
+resource "aws_lambda_function" "apprunner_scheduler" {
+  filename         = data.archive_file.apprunner_scheduler.output_path
+  function_name    = "${var.app_name}-apprunner-scheduler"
+  role             = aws_iam_role.apprunner_scheduler_role.arn
+  handler          = "main.lambda_handler"
+  runtime          = "python3.11"
+  source_code_hash = data.archive_file.apprunner_scheduler.output_base64sha256
+  timeout          = 30
+  environment {
+    variables = {
+      APPRUNNER_SERVICE_ARN = aws_apprunner_service.app.arn
+    }
+  }
+}
+
+# Run at 07:00, 08:00, 17:00, 18:00 UTC to catch 8am and 6pm UK (GMT/BST)
+resource "aws_cloudwatch_event_rule" "apprunner_scheduler" {
+  name                = "${var.app_name}-apprunner-scheduler"
+  description         = "Trigger App Runner pause/resume at 8am and 6pm UK"
+  schedule_expression = "cron(0 7,8,17,18 * * ? *)"
+}
+
+resource "aws_cloudwatch_event_target" "apprunner_scheduler_target" {
+  rule      = aws_cloudwatch_event_rule.apprunner_scheduler.name
+  target_id = "AppRunnerScheduler"
+  arn       = aws_lambda_function.apprunner_scheduler.arn
+}
+
+resource "aws_lambda_permission" "apprunner_scheduler_events" {
+  statement_id  = "AllowEventBridgeInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.apprunner_scheduler.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.apprunner_scheduler.arn
 }

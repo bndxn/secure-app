@@ -23,6 +23,7 @@ wheels/
 venv/
 ENV/
 .terraform/
+terraform/*.zip
 *.tfstate
 *.tfstate.backup
 *.tfstate.*
